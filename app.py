@@ -110,8 +110,7 @@ if sidebar_selection == "Arxiv Researcher":
     from openai import OpenAI
     from langchain_openai import OpenAIEmbeddings
     from langchain_community.vectorstores import FAISS
-    from langchain_text_splitters import TokenTextSplitter
-    from langchain_community.document_loaders import UnstructuredPDFLoader, OnlinePDFLoader
+    from langchain_community.document_loaders import PyPDFLoader
     from langchain_text_splitters import RecursiveCharacterTextSplitter
     import shutil 
 
@@ -156,7 +155,7 @@ if sidebar_selection == "Arxiv Researcher":
             pdf = download_arxiv_pdf(link, "pdfs")
         
         with st.spinner("Embedding document... This may take a while"):
-            loader = UnstructuredPDFLoader(f"{pdf}")
+            loader = PyPDFLoader(f"{pdf}")
             data = loader.load()
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
             texts = text_splitter.split_documents(data)
