@@ -106,16 +106,13 @@ if sidebar_selection == "Arxiv Researcher":
 
     import streamlit as st
     import os
-    import subprocess
-    import platform
     import openai
     from openai import OpenAI
-    import langchain
-    from langchain.embeddings.openai import OpenAIEmbeddings
-    from langchain.vectorstores import FAISS
-    from langchain.text_splitter import TokenTextSplitter
-    from langchain.document_loaders import UnstructuredPDFLoader, OnlinePDFLoader
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_openai import OpenAIEmbeddings
+    from langchain_community.vectorstores import FAISS
+    from langchain_text_splitters import TokenTextSplitter
+    from langchain_community.document_loaders import UnstructuredPDFLoader, OnlinePDFLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     import shutil 
 
     try:
@@ -129,6 +126,22 @@ if sidebar_selection == "Arxiv Researcher":
         shutil.rmtree("embeddings")
         os.mkdir("pdfs")
         os.mkdir("embeddings")
+
+    def download_arxiv_pdf(arxiv_link, destination_dir):
+        paper_id = arxiv_link.rstrip("/").split("/")[-1]
+        pdf_url = arxiv_link
+        if "/abs/" in arxiv_link:
+            pdf_url = arxiv_link.replace("/abs/", "/pdf/")
+        if not pdf_url.endswith(".pdf"):
+            pdf_url = f"{pdf_url}.pdf"
+
+        pdf_path = os.path.join(destination_dir, f"{paper_id}.pdf")
+        response = requests.get(pdf_url, timeout=60)
+        response.raise_for_status()
+        with open(pdf_path, "wb") as pdf_file:
+            pdf_file.write(response.content)
+        return pdf_path
+
     st.title("ARXIV Researcher")
     st.write("Chat with any Arxiv research paper")
     api_key = st.text_input("Enter your OpenAI API key", type = "password")
@@ -140,11 +153,8 @@ if sidebar_selection == "Arxiv Researcher":
         pass
     else:
         with st.spinner("Downloading your research paper"):
-            command = ["arxiv-downloader", "--url", f"{link}", "-d", "pdfs"]
-            subprocess.run(command)
+            pdf = download_arxiv_pdf(link, "pdfs")
         
-        pdf = os.listdir("pdfs")[0]
-        pdf = f"pdfs/{pdf}"
         with st.spinner("Embedding document... This may take a while"):
             loader = UnstructuredPDFLoader(f"{pdf}")
             data = loader.load()
